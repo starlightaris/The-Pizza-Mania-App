@@ -88,7 +88,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:backgroundTint="#CCCCCC"
-        android:drawableStart="@drawable/outline_add_call_24"
+        android:drawableStart="@drawable/ic_phone_white"
         android:drawablePadding="13dp"
         android:hint="Mobile Number"
         android:textColor="@color/white"
