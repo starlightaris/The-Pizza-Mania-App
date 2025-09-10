@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardView"
+    android:layout_width="90dp"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="4dp"
+    android:layout_marginTop="10dp"
+    android:layout_marginRight="4dp"
+    app:cardCornerRadius="30dp">
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="5dp"
+        android:background="@color/grey">
+        
+        <ImageView
+            android:id="@+id/hori_pizza_img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/icon_pizza"
+            android:layout_gravity="center"/>
+
+        <TextView
+            android:id="@+id/hori_pizza_txt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Pizza"
+            android:textColor="@color/black"
+            android:textSize="15sp"
+            android:fontFamily="@font/amita"
+            android:layout_marginTop="10dp"/>
+        
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
