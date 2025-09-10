@@ -24,11 +24,11 @@
 
         <TextView
             android:id="@+id/hori_pizza_txt"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAlignment="center"
+            android:gravity="center"
             android:text="Pizza"
-            android:textColor="@color/white"
+            android:textColor="@color/black"
             android:textSize="15sp"
             android:fontFamily="@font/amita"
             android:layout_marginTop="10dp"/>
