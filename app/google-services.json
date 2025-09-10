@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "414296125516",
+    "firebase_url": "https://pizzamaniaapp-4c9a4-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "pizzamaniaapp-4c9a4",
+    "storage_bucket": "pizzamaniaapp-4c9a4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:414296125516:android:8ca707bf87553e633d04e9",
+        "android_client_info": {
+          "package_name": "com.example.pizzamaniaapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9UAFwCDNXpPqeuEwiYYfH9dZdHJKbZvQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:414296125516:android:248795423fff10113d04e9",
+        "android_client_info": {
+          "package_name": "com.nibm.pizzamaniamobileapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9UAFwCDNXpPqeuEwiYYfH9dZdHJKbZvQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
