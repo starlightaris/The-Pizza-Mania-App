@@ -12,19 +12,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PizzaManiaMobileApp">
         <activity
-            android:name=".WelcomeActivity"
+            android:name=".view.MainActivity"
             android:exported="false" />
         <activity
-            android:name=".RegistrationActivity"
+            android:name=".view.RegistrationActivity"
             android:exported="false" />
         <activity
-            android:name=".LoginActivity"
+            android:name=".view.LoginActivity"
             android:exported="false" />
         <activity
-            android:name=".HomeDashboard"
-            android:exported="false" />
-        <activity
-            android:name=".MainActivity"
+            android:name=".view.WelcomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
