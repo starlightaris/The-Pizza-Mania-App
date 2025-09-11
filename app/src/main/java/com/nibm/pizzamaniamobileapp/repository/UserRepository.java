@@ -1,5 +1,7 @@
 package com.nibm.pizzamaniamobileapp.repository;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.Task;
@@ -17,18 +19,26 @@ public class UserRepository {
     }
     public Task<AuthResult> register(String name, String email, String phone, String password) {
         return auth.createUserWithEmailAndPassword(email, password)
-                .addOnSuccessListener(authResult -> {
-                    if (auth.getCurrentUser() != null) {
-                        String uid = auth.getCurrentUser().getUid();
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().getUser() != null) {
+                        String uid = task.getResult().getUser().getUid();
                         User user = new User(
                                 uid,
                                 name,
                                 email,
                                 phone,
-                                "customer", // default role
+                                "customer",
                                 com.google.firebase.Timestamp.now()
                         );
-                        db.collection("users").document(uid).set(user);
+                        db.collection("users").document(uid).set(user)
+                                .addOnSuccessListener(unused ->
+                                        Log.d("Firestore", "✅ User added to users collection"))
+                                .addOnFailureListener(e ->
+                                        Log.e("Firestore", "❌ Failed to add user", e));
+                    } else {
+                        if (task.getException() != null) {
+                            Log.e("FirebaseAuth", "❌ Registration failed", task.getException());
+                        }
                     }
                 });
     }
