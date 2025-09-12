@@ -17,7 +17,7 @@ import com.nibm.pizzamaniamobileapp.model.HomeHoriModel;
 import java.util.ArrayList;
 import java.util.List;
 
-import adapters.HomeHoriAdapter;
+import com.nibm.pizzamaniamobileapp.adapters.HomeHoriAdapter;
 
 public class HomeFragment extends Fragment {
 
