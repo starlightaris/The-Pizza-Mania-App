@@ -2,7 +2,6 @@ package com.nibm.pizzamaniamobileapp.view;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -29,11 +28,13 @@ public class RegistrationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_registration);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
         nameInput = findViewById(R.id.txtName);
         emailInput = findViewById(R.id.txtEmail);
         phoneInput = findViewById(R.id.txtPhone);
@@ -43,25 +44,39 @@ public class RegistrationActivity extends AppCompatActivity {
 
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
+        // Handle registration
         registerBtn.setOnClickListener(v -> {
             String name = nameInput.getText().toString().trim();
             String email = emailInput.getText().toString().trim();
             String phone = phoneInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
-            userViewModel.register(name, email, phone, password);
+            if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show();
+            } else {
+                userViewModel.register(name, email, phone, password);
+            }
         });
-        loginLink.setOnClickListener(v -> {
-            startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
-        });
-        userViewModel.getLoginSuccess().observe(this, success -> {
-            if (success) {
+
+        // Redirect to login page
+        loginLink.setOnClickListener(v ->
+                startActivity(new Intent(RegistrationActivity.this, LoginActivity.class)));
+
+        // Observe errors
+        userViewModel.getErrorMessage().observe(this, msg ->
+                Toast.makeText(this, "Error: " + msg, Toast.LENGTH_SHORT).show());
+
+        // Observe role after successful registration
+        userViewModel.getRoleLiveData().observe(this, role -> {
+            if (role != null) {
                 Toast.makeText(this, "Registered successfully", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(this, MainActivity.class));
+                if (role.equals("admin")) {
+                    startActivity(new Intent(RegistrationActivity.this, DashboardActivity.class));
+                } else {
+                    startActivity(new Intent(RegistrationActivity.this, WelcomeActivity.class));
+                }
                 finish();
             }
         });
-        userViewModel.getErrorMessage().observe(this, msg ->
-                Toast.makeText(this, "Error: " + msg, Toast.LENGTH_SHORT).show());
     }
 }
