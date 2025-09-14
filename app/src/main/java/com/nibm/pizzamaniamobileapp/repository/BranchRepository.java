@@ -1,13 +1,19 @@
 package com.nibm.pizzamaniamobileapp.repository;
 
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.lifecycle.MutableLiveData;
 
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.nibm.pizzamaniamobileapp.model.Branch;
+import com.nibm.pizzamaniamobileapp.utils.App; // A helper class for global context
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BranchRepository {
     private final FirebaseFirestore db;
@@ -18,19 +24,24 @@ public class BranchRepository {
         db.collection("branches")
                 .add(branch)  // Firestore generates unique ID
                 .addOnSuccessListener(ref -> {
-                    // Save the generated ID into the branch object
                     String id = ref.getId();
                     branch.setBranchId(id);
 
-                    // Update the document with its ID field
+                    // Update document with its ID field
                     ref.update("branchId", id)
-                            .addOnSuccessListener(unused ->
-                                    Log.d("Firestore", "✅ Branch added with ID: " + id))
-                            .addOnFailureListener(e ->
-                                    Log.e("Firestore", "❌ Failed to update branchId", e));
+                            .addOnSuccessListener(unused -> {
+                                Log.d("Firestore", "✅ Branch added with ID: " + id);
+                                Toast.makeText(App.getContext(), "Branch added", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("Firestore", "❌ Failed to update branchId", e);
+                                Toast.makeText(App.getContext(), "Failed to update branch ID", Toast.LENGTH_SHORT).show();
+                            });
                 })
-                .addOnFailureListener(e ->
-                        Log.e("Firestore", "❌ Failed to add branch", e));
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "❌ Failed to add branch", e);
+                    Toast.makeText(App.getContext(), "Failed to add branch", Toast.LENGTH_SHORT).show();
+                });
     }
     public void updateBranch(Branch branch) {
         db.collection("branches").document(branch.getBranchId())
@@ -39,8 +50,14 @@ public class BranchRepository {
                         "location", branch.getLocation(),
                         "contact", branch.getContact()
                 )
-                .addOnSuccessListener(unused -> Log.d("Firestore", "✅ Branch updated"))
-                .addOnFailureListener(e -> Log.e("Firestore", "❌ Failed to update branch", e));
+                .addOnSuccessListener(unused -> {
+                    Log.d("Firestore", "✅ Branch updated");
+                    Toast.makeText(App.getContext(), "Branch updated", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "❌ Failed to update branch", e);
+                    Toast.makeText(App.getContext(), "Failed to update branch", Toast.LENGTH_SHORT).show();
+                });
     }
     public void deleteBranch(String branchId) {
         db.collection("branches").document(branchId)
@@ -48,16 +65,23 @@ public class BranchRepository {
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
                         doc.getReference().delete()
-                                .addOnSuccessListener(unused ->
-                                        Log.d("Firestore", "✅ Branch deleted: " + branchId))
-                                .addOnFailureListener(e ->
-                                        Log.e("Firestore", "❌ Failed to delete branch: " + branchId, e));
+                                .addOnSuccessListener(unused -> {
+                                    Log.d("Firestore", "✅ Branch deleted: " + branchId);
+                                    Toast.makeText(App.getContext(), "Branch deleted", Toast.LENGTH_SHORT).show();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e("Firestore", "❌ Failed to delete branch: " + branchId, e);
+                                    Toast.makeText(App.getContext(), "Failed to delete branch", Toast.LENGTH_SHORT).show();
+                                });
                     } else {
                         Log.w("Firestore", "⚠️ Branch not found: " + branchId);
+                        Toast.makeText(App.getContext(), "Branch not found", Toast.LENGTH_SHORT).show();
                     }
                 })
-                .addOnFailureListener(e ->
-                        Log.e("Firestore", "❌ Error checking branch before delete", e));
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "❌ Error checking branch before delete", e);
+                    Toast.makeText(App.getContext(), "Error deleting branch", Toast.LENGTH_SHORT).show();
+                });
     }
     public void getBranches(MutableLiveData<QuerySnapshot> branchesLiveData) {
         db.collection("branches")
@@ -69,6 +93,24 @@ public class BranchRepository {
                     if (value != null) {
                         branchesLiveData.setValue(value);
                     }
+                });
+    }
+    public void getAllBranchesForDropdown(MutableLiveData<List<Map<String, String>>> branchesLiveData) {
+        db.collection("branches")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Map<String, String>> branchList = new ArrayList<>();
+                    for (var doc : querySnapshot.getDocuments()) {
+                        Map<String, String> branchMap = new HashMap<>();
+                        branchMap.put("branchId", doc.getId());
+                        branchMap.put("name", doc.getString("name"));
+                        branchList.add(branchMap);
+                    }
+                    branchesLiveData.setValue(branchList);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "❌ Failed to fetch branches for dropdown", e);
+                    branchesLiveData.setValue(new ArrayList<>());
                 });
     }
 }

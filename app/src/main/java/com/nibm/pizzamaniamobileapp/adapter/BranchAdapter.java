@@ -1,4 +1,4 @@
-package com.nibm.pizzamaniamobileapp.adapters;
+package com.nibm.pizzamaniamobileapp.adapter;
 
 import android.app.AlertDialog;
 import android.view.LayoutInflater;
@@ -11,7 +11,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.firestore.GeoPoint;
 import com.nibm.pizzamaniamobileapp.R;
 import com.nibm.pizzamaniamobileapp.model.Branch;
 

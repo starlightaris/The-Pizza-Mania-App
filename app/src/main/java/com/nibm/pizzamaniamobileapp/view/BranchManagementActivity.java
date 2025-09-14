@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.nibm.pizzamaniamobileapp.R;
-import com.nibm.pizzamaniamobileapp.adapters.BranchAdapter;
+import com.nibm.pizzamaniamobileapp.adapter.BranchAdapter;
 import com.nibm.pizzamaniamobileapp.model.Branch;
 import com.nibm.pizzamaniamobileapp.repository.UserRepository;
 import com.nibm.pizzamaniamobileapp.viewmodel.BranchViewModel;
@@ -73,44 +73,40 @@ public class BranchManagementActivity extends AppCompatActivity {
             }
         });
     }
-
     private void showLoading(boolean visible) {
         if (loadingOverlay != null) {
             loadingOverlay.setVisibility(visible ? FrameLayout.VISIBLE : FrameLayout.GONE);
         }
     }
-
     private void setupUI() {
         recyclerBranches.setLayoutManager(new LinearLayoutManager(this));
 
         branchAdapter = new BranchAdapter(
                 new ArrayList<>(),
-                branch -> showEditDialog(branch), // click
-                branch -> {}, // long click (optional, keep empty)
-                branch -> showEditDialog(branch), // edit listener
-                branch -> { // delete listener
+                branch -> showEditDialog(branch),
+                branch -> {},
+                branch -> showEditDialog(branch),
+                branch -> {
                     new AlertDialog.Builder(this)
                             .setTitle("Delete Branch")
                             .setMessage("Are you sure you want to delete \"" + branch.getName() + "\"?")
                             .setPositiveButton("Yes", (dialog, which) -> {
                                 branchViewModel.deleteBranch(branch.getBranchId());
-                                Toast.makeText(this, "Branch deleted", Toast.LENGTH_SHORT).show();
                             })
                             .setNegativeButton("No", null)
                             .show();
                 }
         );
-
         recyclerBranches.setAdapter(branchAdapter);
 
         btnAddBranch.setOnClickListener(v -> showAddDialog());
     }
-
     private void observeBranches() {
         branchViewModel.getBranches().observe(this, snapshot -> {
             List<Branch> branches = new ArrayList<>();
             for (QueryDocumentSnapshot doc : snapshot) {
                 Branch b = doc.toObject(Branch.class);
+                b.setBranchId(doc.getId());
                 branches.add(b);
             }
             branchAdapter.updateData(branches);
