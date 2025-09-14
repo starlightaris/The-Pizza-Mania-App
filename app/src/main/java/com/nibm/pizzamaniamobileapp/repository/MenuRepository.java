@@ -4,9 +4,7 @@ import android.util.Log;
 
 import androidx.lifecycle.MutableLiveData;
 
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.nibm.pizzamaniamobileapp.model.MenuItem;
 
 import java.util.ArrayList;
@@ -21,7 +19,7 @@ public class MenuRepository {
     }
 
     public void addMenuItem(String branchId, MenuItem item) {
-        DocumentReference ref = db.collection("branches")
+        var ref = db.collection("branches")
                 .document(branchId)
                 .collection("menu")
                 .document();
@@ -79,5 +77,4 @@ public class MenuRepository {
                     }
                 });
     }
-
 }
