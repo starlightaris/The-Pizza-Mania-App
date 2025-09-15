@@ -36,7 +36,7 @@ public class PaymentManagementDialog extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_payment_management, null);
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add_payment, null);
 
         edtCardHolder = view.findViewById(R.id.edtCardHolder);
         edtCardNumber = view.findViewById(R.id.edtCardNumber);
@@ -44,7 +44,7 @@ public class PaymentManagementDialog extends DialogFragment {
         edtCVV = view.findViewById(R.id.edtCVV);
         btnSave = view.findViewById(R.id.btnSavePayment);
 
-        paymentsViewModel = new ViewModelProvider(requireActivity()).get(PaymentsViewModel.class);
+        paymentsViewModel = new ViewModelProvider(requireActivity()).get(PaymentViewModel.class);
 
         if (editingPayment != null) {
             edtCardHolder.setText(editingPayment.getCardHolderName());

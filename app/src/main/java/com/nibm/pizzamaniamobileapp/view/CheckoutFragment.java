@@ -18,13 +18,15 @@ import android.widget.TextView;
 import com.nibm.pizzamaniamobileapp.R;
 import com.nibm.pizzamaniamobileapp.adapter.CartAdapter;
 import com.nibm.pizzamaniamobileapp.viewmodel.CartViewModel;
+import com.nibm.pizzamaniamobileapp.viewmodel.PaymentViewModel;
 
 public class CheckoutFragment extends Fragment {
 
     private RecyclerView recyclerCartItems;
-    private TextView txtDeliveryAddress, txtTotalPrice;
+    private TextView txtDeliveryAddress, txtTotalPrice, txtSelectedPayment;
     private Button btnChangeAddress, btnProceedPayment;
     private CartViewModel cartViewModel;
+    private PaymentViewModel paymentViewModel;
     private CartAdapter cartAdapter;
 
     @Nullable
@@ -36,11 +38,12 @@ public class CheckoutFragment extends Fragment {
         recyclerCartItems = view.findViewById(R.id.recyclerCartItems);
         txtDeliveryAddress = view.findViewById(R.id.txtDeliveryAddress);
         txtTotalPrice = view.findViewById(R.id.txtTotalPrice);
+        txtSelectedPayment = view.findViewById(R.id.txtSelectedPayment);
         btnChangeAddress = view.findViewById(R.id.btnChangeAddress);
         btnProceedPayment = view.findViewById(R.id.btnProceedPayment);
 
-        // Use existing CartViewModel
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
+        paymentViewModel = new ViewModelProvider(requireActivity()).get(PaymentViewModel.class);
 
         recyclerCartItems.setLayoutManager(new LinearLayoutManager(getContext()));
         cartAdapter = new CartAdapter(cartViewModel.getCartItemsLiveData().getValue());
@@ -51,6 +54,20 @@ public class CheckoutFragment extends Fragment {
             cartAdapter.updateList(items);
             txtTotalPrice.setText("Total: $" + cartViewModel.getTotalPrice());
         });
+
+        // Observe selected payment
+        paymentViewModel.getSelectedPaymentMethod().observe(getViewLifecycleOwner(), payment -> {
+            if (payment != null) {
+                cartViewModel.setSelectedPayment(payment);
+                txtSelectedPayment.setText(payment.getMaskedCard());
+            }
+        });
+        // Click to open PaymentsFragment or dialog
+        txtSelectedPayment.setOnClickListener(v -> {
+            PaymentFragment paymentFragment = new PaymentFragment();
+            paymentFragment.show(getParentFragmentManager(), "SelectPayment");
+        });
+
 
         // Delivery address
         cartViewModel.getSelectedAddress().observe(getViewLifecycleOwner(), address -> {

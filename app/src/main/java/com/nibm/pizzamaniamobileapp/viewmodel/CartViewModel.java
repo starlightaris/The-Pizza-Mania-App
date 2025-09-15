@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.nibm.pizzamaniamobileapp.model.Address;
 import com.nibm.pizzamaniamobileapp.model.CartItem;
 import com.nibm.pizzamaniamobileapp.model.MenuItem;
+import com.nibm.pizzamaniamobileapp.model.PaymentMethod;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,17 @@ public class CartViewModel extends ViewModel {
     private final MutableLiveData<List<CartItem>> cartItemsLiveData = new MutableLiveData<>(new ArrayList<>());
     private String selectedBranchId;
     private String userId;
+
+    private PaymentMethod selectedPayment;
+
+    public void setSelectedPayment(PaymentMethod payment) {
+        this.selectedPayment = payment;
+    }
+
+    public PaymentMethod getSelectedPayment() {
+        return selectedPayment;
+    }
+
 
     // --- Cart Management ---
     public int addItem(MenuItem menuItem) {
