@@ -1,10 +1,8 @@
 package com.nibm.pizzamaniamobileapp.view;
 
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -57,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (itemId == R.id.navCart) {
                 loadFragment(new CartFragment(), false);
             } else if (itemId == R.id.navActivity) {
-                loadFragment(new ActivityFragment(), false);
+                loadFragment(new DeliveryFragment(), false);
             } else { // navProfile
                 loadFragment(new ProfileFragment(), false);
             }
