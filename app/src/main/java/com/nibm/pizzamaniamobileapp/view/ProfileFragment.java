@@ -36,11 +36,11 @@ public class ProfileFragment extends Fragment {
         btnAddAddress = view.findViewById(R.id.btnAddAddress);
 
         recyclerAddresses.setLayoutManager(new LinearLayoutManager(getContext()));
-        addressAdapter = new AddressAdapter(addressList);
+        addressAdapter = new AddressAdapter(addressList, (AddressAdapter.OnAddressClickListener) this);
         recyclerAddresses.setAdapter(addressAdapter);
 
         btnAddAddress.setOnClickListener(v -> {
-            AddAddressDialog dialog = new AddAddressDialog();
+            AddressManagementDialog dialog = new AddressManagementDialog();
             dialog.show(getChildFragmentManager(), "AddAddressDialog");
         });
 
