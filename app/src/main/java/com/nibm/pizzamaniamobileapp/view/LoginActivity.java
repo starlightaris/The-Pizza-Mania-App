@@ -49,14 +49,20 @@ public class LoginActivity extends AppCompatActivity {
         signUpLink.setOnClickListener(v -> {
             startActivity(new Intent(LoginActivity.this, RegistrationActivity.class));
         });
-        userViewModel.getLoginSuccess().observe(this, success -> {
-            if (success) {
+        userViewModel.getErrorMessage().observe(this, msg ->
+                Toast.makeText(this, "Error: " + msg, Toast.LENGTH_SHORT).show());
+        userViewModel.getRoleLiveData().observe(this, role -> {
+            if (role != null) {
                 Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(this, MainActivity.class));
+                if (role.equals("admin")) {
+                    // Redirect to admin dashboard
+                    startActivity(new Intent(LoginActivity.this, DashboardActivity.class));
+                } else {
+                    // Redirect to customer home page
+                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                }
                 finish();
             }
         });
-        userViewModel.getErrorMessage().observe(this, msg ->
-                Toast.makeText(this, "Error: " + msg, Toast.LENGTH_SHORT).show());
     }
 }

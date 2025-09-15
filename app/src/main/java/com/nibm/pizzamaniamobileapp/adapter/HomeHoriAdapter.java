@@ -1,4 +1,4 @@
-package com.nibm.pizzamaniamobileapp.adapters;
+package com.nibm.pizzamaniamobileapp.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
