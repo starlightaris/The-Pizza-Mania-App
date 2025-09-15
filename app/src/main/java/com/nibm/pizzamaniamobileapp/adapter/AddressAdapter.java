@@ -73,4 +73,11 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
         void onEditAddress(Address address);
         void onDeleteAddress(Address address);
     }
+
+    public void updateList(List<Address> newList) {
+        addressList.clear();
+        addressList.addAll(newList);
+        notifyDataSetChanged();
+    }
+
 }

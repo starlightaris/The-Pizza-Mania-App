@@ -17,6 +17,7 @@ import com.nibm.pizzamaniamobileapp.R;
 import com.nibm.pizzamaniamobileapp.adapter.AddressAdapter;
 import com.nibm.pizzamaniamobileapp.model.Address;
 import com.nibm.pizzamaniamobileapp.viewmodel.CartViewModel;
+import com.nibm.pizzamaniamobileapp.viewmodel.ProfileViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,10 +29,12 @@ public class AddressBottomSheet extends BottomSheetDialogFragment {
     private AddressAdapter addressAdapter;
     private List<Address> addressList = new ArrayList<>();
     private CartViewModel cartViewModel;
+    private ProfileViewModel profileViewModel;
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.bottomsheet_address, container, false);
@@ -40,12 +43,10 @@ public class AddressBottomSheet extends BottomSheetDialogFragment {
         btnAddNewAddress = view.findViewById(R.id.btnAddNewAddress);
 
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
-
-        // TODO: Load addresses from Firebase or ProfileViewModel
-        // For now, using local list for testing
-        addressList = getSavedAddresses();
+        profileViewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
         recyclerAddresses.setLayoutManager(new LinearLayoutManager(getContext()));
+
         addressAdapter = new AddressAdapter(addressList, new AddressAdapter.OnAddressClickListener() {
             @Override
             public void onAddressSelected(Address address) {
@@ -61,12 +62,17 @@ public class AddressBottomSheet extends BottomSheetDialogFragment {
 
             @Override
             public void onDeleteAddress(Address address) {
-                // remove from list / Firebase
-                addressList.remove(address);
-                addressAdapter.notifyDataSetChanged();
+                // ✅ Tell ViewModel to remove it, not just local list
+                profileViewModel.deleteAddress(address);
             }
         });
         recyclerAddresses.setAdapter(addressAdapter);
+
+        profileViewModel.getAddressListLiveData().observe(getViewLifecycleOwner(), addresses -> {
+            addressList.clear();
+            addressList.addAll(addresses);
+            addressAdapter.notifyDataSetChanged();
+        });
 
         btnAddNewAddress.setOnClickListener(v -> {
             AddressManagementDialog dialog = new AddressManagementDialog();
@@ -75,10 +81,6 @@ public class AddressBottomSheet extends BottomSheetDialogFragment {
 
         return view;
     }
-
-    private List<Address> getSavedAddresses() {
-        // Placeholder: in real app, load from Firebase
-        return new ArrayList<>();
-    }
 }
+
 

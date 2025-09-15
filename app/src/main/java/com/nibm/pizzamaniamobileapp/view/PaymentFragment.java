@@ -2,65 +2,72 @@ package com.nibm.pizzamaniamobileapp.view;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import com.nibm.pizzamaniamobileapp.R;
+import com.nibm.pizzamaniamobileapp.adapter.PaymentAdapter;
+import com.nibm.pizzamaniamobileapp.model.PaymentMethod;
+import com.nibm.pizzamaniamobileapp.viewmodel.PaymentViewModel;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link PaymentFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import java.util.ArrayList;
+import java.util.List;
+
 public class PaymentFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private RecyclerView recyclerPayments;
+    private Button btnAddPayment;
+    private PaymentAdapter paymentAdapter;
+    private List<PaymentMethod> paymentList = new ArrayList<>();
+    private PaymentViewModel paymentsViewModel;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
-    public PaymentFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment PaymentFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static PaymentFragment newInstance(String param1, String param2) {
-        PaymentFragment fragment = new PaymentFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
+    @Nullable
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
-    }
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_payment, container, false);
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_payment, container, false);
+        recyclerPayments = view.findViewById(R.id.recyclerPayments);
+        btnAddPayment = view.findViewById(R.id.btnAddPayment);
+
+        recyclerPayments.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        paymentAdapter = new PaymentAdapter(paymentList, new PaymentAdapter.OnPaymentClickListener() {
+            @Override
+            public void onEditPayment(PaymentMethod payment) {
+                PaymentManagementDialog.newInstance(payment)
+                        .show(getChildFragmentManager(), "EditPaymentDialog");
+            }
+
+            @Override
+            public void onDeletePayment(PaymentMethod payment) {
+                paymentsViewModel.deletePayment(payment);
+            }
+        });
+
+        recyclerPayments.setAdapter(paymentAdapter);
+
+        btnAddPayment.setOnClickListener(v -> {
+            new PaymentManagementDialog()
+                    .show(getChildFragmentManager(), "AddPaymentDialog");
+        });
+
+        paymentsViewModel = new ViewModelProvider(requireActivity()).get(PaymentViewModel.class);
+        paymentsViewModel.getPaymentListLiveData().observe(getViewLifecycleOwner(), payments -> {
+            paymentList.clear();
+            paymentList.addAll(payments);
+            paymentAdapter.notifyDataSetChanged();
+        });
+
+        return view;
     }
 }
