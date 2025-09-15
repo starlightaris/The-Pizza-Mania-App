@@ -23,7 +23,7 @@
             android:fontFamily="@font/lobster"
             android:text="The Pizza Mania"
             android:textColor="@color/white"
-            android:textSize="33sp" />
+            android:textSize="32sp" />
 
         <!-- Bell Icon -->
         <ImageView

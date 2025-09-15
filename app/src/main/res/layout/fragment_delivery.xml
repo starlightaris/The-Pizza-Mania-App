@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.ActivityFragment">
+    tools:context=".view.DeliveryFragment">
 
     <TextView
         android:layout_width="match_parent"
@@ -11,5 +11,5 @@
         android:gravity="center"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:text="Activity (delivery, noti) Fragment" />
+        android:text="Delivery Fragment" />
 </FrameLayout>

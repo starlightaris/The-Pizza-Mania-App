@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -78,7 +79,15 @@ public class CartFragment extends Fragment {
         });
 
         // Checkout click
-        btnCheckout.setOnClickListener(v -> checkout());
+        btnCheckout.setOnClickListener(v -> {
+            CheckoutFragment checkoutFragment = new CheckoutFragment();
+
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.frameLayout, checkoutFragment);
+            transaction.addToBackStack(null); //for back btn
+            transaction.commit();
+        });
+
 
         return root;
     }
