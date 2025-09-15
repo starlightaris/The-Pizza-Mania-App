@@ -44,7 +44,25 @@ public class ProfileFragment extends Fragment {
             dialog.show(getChildFragmentManager(), "AddAddressDialog");
         });
 
-        // TODO: load addresses from Firebase later
+        addressAdapter = new AddressAdapter(addressList, new AddressAdapter.OnAddressClickListener() {
+            @Override
+            public void onAddressSelected(Address address) {
+                // Optional: set selected for checkout
+            }
+
+            @Override
+            public void onEditAddress(Address address) {
+                // Open the AddressManagementDialog to edit THIS address
+                AddressManagementDialog.newInstance(address)
+                        .show(getChildFragmentManager(), "EditAddressDialog");
+            }
+
+            @Override
+            public void onDeleteAddress(Address address) {
+                // Remove from list / Firebase
+            }
+        });
+        recyclerAddresses.setAdapter(addressAdapter);
         return view;
     }
 }

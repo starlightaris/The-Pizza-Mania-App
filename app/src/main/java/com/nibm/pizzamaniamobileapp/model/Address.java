@@ -9,6 +9,9 @@ public class Address {
     private String postalCode;
     private boolean isDefault;
 
+    public Address() {
+    }
+
     public Address(String addressId, String fullName, String phone, String street, String city, String postalCode, boolean isDefault) {
         this.addressId = addressId;
         this.fullName = fullName;
@@ -73,6 +76,14 @@ public class Address {
 
     public void setDefault(boolean aDefault) {
         isDefault = aDefault;
+    }
+
+    public String getFullAddress() {
+        StringBuilder sb = new StringBuilder();
+        if (street != null && !street.isEmpty()) sb.append(street);
+        if (city != null && !city.isEmpty()) sb.append(", ").append(city);
+        if (postalCode != null && !postalCode.isEmpty()) sb.append(" ").append(postalCode);
+        return sb.toString();
     }
 }
 

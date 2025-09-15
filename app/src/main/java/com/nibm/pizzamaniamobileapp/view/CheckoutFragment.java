@@ -2,65 +2,77 @@ package com.nibm.pizzamaniamobileapp.view;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 
 import com.nibm.pizzamaniamobileapp.R;
+import com.nibm.pizzamaniamobileapp.adapter.CartAdapter;
+import com.nibm.pizzamaniamobileapp.viewmodel.CartViewModel;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link CheckoutFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class CheckoutFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private RecyclerView recyclerCartItems;
+    private TextView txtDeliveryAddress, txtTotalPrice;
+    private Button btnChangeAddress, btnProceedPayment;
+    private CartViewModel cartViewModel;
+    private CartAdapter cartAdapter;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
-    public CheckoutFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment CheckoutFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static CheckoutFragment newInstance(String param1, String param2) {
-        CheckoutFragment fragment = new CheckoutFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
+    @Nullable
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
-    }
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_checkout, container, false);
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_checkout, container, false);
+        recyclerCartItems = view.findViewById(R.id.recyclerCartItems);
+        txtDeliveryAddress = view.findViewById(R.id.txtDeliveryAddress);
+        txtTotalPrice = view.findViewById(R.id.txtTotalPrice);
+        btnChangeAddress = view.findViewById(R.id.btnChangeAddress);
+        btnProceedPayment = view.findViewById(R.id.btnProceedPayment);
+
+        // Use existing CartViewModel
+        cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
+
+        recyclerCartItems.setLayoutManager(new LinearLayoutManager(getContext()));
+        cartAdapter = new CartAdapter(cartViewModel.getCartItemsLiveData().getValue());
+        recyclerCartItems.setAdapter(cartAdapter);
+
+        // Observe cart items
+        cartViewModel.getCartItemsLiveData().observe(getViewLifecycleOwner(), items -> {
+            cartAdapter.updateList(items);
+            txtTotalPrice.setText("Total: $" + cartViewModel.getTotalPrice());
+        });
+
+        // Delivery address
+        cartViewModel.getSelectedAddress().observe(getViewLifecycleOwner(), address -> {
+            if (address != null) {
+                txtDeliveryAddress.setText(address.getFullAddress());
+            } else {
+                txtDeliveryAddress.setText("No address selected");
+            }
+        });
+
+
+        btnChangeAddress.setOnClickListener(v -> {
+            new AddressManagementDialog().show(getChildFragmentManager(), "AddAddressDialog");
+        });
+
+        btnProceedPayment.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.frameLayout, new PaymentFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        return view;
     }
-}
+    }

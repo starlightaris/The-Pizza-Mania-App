@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.nibm.pizzamaniamobileapp.model.Address;
 import com.nibm.pizzamaniamobileapp.model.CartItem;
 import com.nibm.pizzamaniamobileapp.model.MenuItem;
 
@@ -80,4 +81,17 @@ public class CartViewModel extends ViewModel {
     public void setUserId(String userId) {
         this.userId = userId;
     }
+
+    // Address Management
+
+    private final MutableLiveData<Address> selectedAddress = new MutableLiveData<>();
+
+    public LiveData<Address> getSelectedAddress() {
+        return selectedAddress;
+    }
+
+    public void setSelectedAddress(Address address) {
+        selectedAddress.setValue(address);
+    }
+
 }
