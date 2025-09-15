@@ -8,11 +8,11 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -23,6 +23,7 @@ import com.nibm.pizzamaniamobileapp.adapter.HomeMenuAdapter;
 import com.nibm.pizzamaniamobileapp.model.HomeHoriModel;
 import com.nibm.pizzamaniamobileapp.model.MenuItem;
 import com.nibm.pizzamaniamobileapp.repository.MenuRepository;
+import com.nibm.pizzamaniamobileapp.viewmodel.CartViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,10 +42,14 @@ public class HomeFragment extends Fragment {
     private MutableLiveData<List<MenuItem>> menuLiveData = new MutableLiveData<>();
     private MenuRepository repository = new MenuRepository();
 
+    private CartViewModel cartViewModel;
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_home, container, false);
+
+        cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
 
         // --- Branch Spinner ---
         branchSpinner = root.findViewById(R.id.branch_spinner);
@@ -75,9 +80,22 @@ public class HomeFragment extends Fragment {
         homeMenuRec.setLayoutManager(new LinearLayoutManager(getActivity()));
         homeMenuRec.setNestedScrollingEnabled(false);
 
-        homeMenuAdapter = new HomeMenuAdapter(getActivity(), new ArrayList<>(), item -> {
-            Log.d("HomeFragment", "Clicked menu item: " + item.getName());
-        });
+        homeMenuAdapter = new HomeMenuAdapter(
+                getActivity(),
+                new ArrayList<>(),
+                cartViewModel,
+                new HomeMenuAdapter.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(MenuItem item) {
+                        Log.d("HomeFragment", "Clicked menu item: " + item.getName());
+                    }
+
+                    @Override
+                    public void onAddClick(MenuItem item) {
+                        Log.d("HomeFragment", "Added to cart: " + item.getName());
+                    }
+                });
+
         homeMenuRec.setAdapter(homeMenuAdapter);
 
         menuLiveData.observe(getViewLifecycleOwner(), menuList -> homeMenuAdapter.updateList(menuList));
@@ -106,8 +124,8 @@ public class HomeFragment extends Fragment {
 
     private void setupBranchSpinner() {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(),
-                R.layout.spinner_item, branchList); // selected item uses spinner_item
-        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item); // dropdown items
+                R.layout.spinner_item, branchList);
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         branchSpinner.setAdapter(adapter);
 
         branchSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -115,12 +133,14 @@ public class HomeFragment extends Fragment {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String branchId = branchIdList.get(position);
                 fetchMenuItems(branchId);
+                cartViewModel.setSelectedBranchId(branchId);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
+
     private void fetchMenuItems(String branchId) {
         repository.getMenuItems(branchId, menuLiveData);
     }
