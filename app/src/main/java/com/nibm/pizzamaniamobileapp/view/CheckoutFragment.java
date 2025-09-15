@@ -63,7 +63,8 @@ public class CheckoutFragment extends Fragment {
 
 
         btnChangeAddress.setOnClickListener(v -> {
-            new AddressManagementDialog().show(getChildFragmentManager(), "AddAddressDialog");
+            AddressBottomSheet bottomSheet = new AddressBottomSheet();
+            bottomSheet.show(getChildFragmentManager(), "AddressBottomSheet");
         });
 
         btnProceedPayment.setOnClickListener(v -> {
