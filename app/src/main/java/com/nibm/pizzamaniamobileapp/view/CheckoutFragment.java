@@ -1,6 +1,12 @@
 package com.nibm.pizzamaniamobileapp.view;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -8,12 +14,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.TextView;
 
 import com.nibm.pizzamaniamobileapp.R;
 import com.nibm.pizzamaniamobileapp.adapter.CartAdapter;
@@ -52,7 +52,7 @@ public class CheckoutFragment extends Fragment {
         // Observe cart items
         cartViewModel.getCartItemsLiveData().observe(getViewLifecycleOwner(), items -> {
             cartAdapter.updateList(items);
-            txtTotalPrice.setText("Total: $" + cartViewModel.getTotalPrice());
+            txtTotalPrice.setText("Total: Rs." + String.format("%.2f", cartViewModel.getTotalPrice()));
         });
 
         // Observe selected payment
@@ -62,12 +62,12 @@ public class CheckoutFragment extends Fragment {
                 txtSelectedPayment.setText(payment.getMaskedCard());
             }
         });
+
         // Click to open PaymentsFragment or dialog
         txtSelectedPayment.setOnClickListener(v -> {
             PaymentFragment paymentFragment = new PaymentFragment();
             paymentFragment.show(getParentFragmentManager(), "SelectPayment");
         });
-
 
         // Delivery address
         cartViewModel.getSelectedAddress().observe(getViewLifecycleOwner(), address -> {
@@ -77,7 +77,6 @@ public class CheckoutFragment extends Fragment {
                 txtDeliveryAddress.setText("No address selected");
             }
         });
-
 
         btnChangeAddress.setOnClickListener(v -> {
             AddressBottomSheet bottomSheet = new AddressBottomSheet();
@@ -93,4 +92,4 @@ public class CheckoutFragment extends Fragment {
 
         return view;
     }
-    }
+}

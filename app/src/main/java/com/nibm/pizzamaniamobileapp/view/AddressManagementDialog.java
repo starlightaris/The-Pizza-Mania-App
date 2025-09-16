@@ -23,7 +23,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.nibm.pizzamaniamobileapp.R;
 import com.nibm.pizzamaniamobileapp.model.Address;
-import com.nibm.pizzamaniamobileapp.viewmodel.CartViewModel;
+import com.nibm.pizzamaniamobileapp.viewmodel.ProfileViewModel;
 
 import java.io.Serializable;
 
@@ -31,7 +31,7 @@ public class AddressManagementDialog extends DialogFragment {
     private EditText editStreet, editCity, editPostal;
     private Button btnSave;
     private Address addressToEdit;
-    private CartViewModel cartViewModel;
+    private ProfileViewModel profileViewModel;
     private FusedLocationProviderClient fusedLocationClient;
 
     public static AddressManagementDialog newInstance(Address address) {
@@ -54,10 +54,9 @@ public class AddressManagementDialog extends DialogFragment {
         editPostal = view.findViewById(R.id.editPostal);
         btnSave = view.findViewById(R.id.btnSaveAddress);
 
-        cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
+        profileViewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
-        // If editing existing address, pre-fill fields
         if (getArguments() != null && getArguments().containsKey("address")) {
             addressToEdit = (Address) getArguments().getSerializable("address");
             editStreet.setText(addressToEdit.getStreet());
@@ -80,12 +79,8 @@ public class AddressManagementDialog extends DialogFragment {
     }
 
     private void saveWithLocation() {
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(),
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1001);
-            return;
-        }
+        if (ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return;
 
         fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
             if (location != null) {
@@ -98,38 +93,16 @@ public class AddressManagementDialog extends DialogFragment {
                 address.setGeoPoint(geoPoint);
                 address.setDefault(true);
 
-                // ✅ Save locally in ViewModel
-                cartViewModel.setSelectedAddress(address);
+                if (addressToEdit != null) {
+                    profileViewModel.updateAddress(address);
+                } else {
+                    profileViewModel.addAddress(address);
+                }
 
-                // ✅ ALSO save to Firestore
-                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                FirebaseFirestore.getInstance()
-                        .collection("users")
-                        .document(userId)
-                        .collection("addresses")
-                        .add(address)
-                        .addOnSuccessListener(docRef -> {
-                            Toast.makeText(getContext(), "Address saved to Firestore!", Toast.LENGTH_SHORT).show();
-                            dismiss();
-                        })
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(getContext(), "Failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        });
-
+                dismiss();
             } else {
                 Toast.makeText(getContext(), "Could not get location", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1001 && grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            saveWithLocation();
-        } else {
-            Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
-        }
     }
 }
