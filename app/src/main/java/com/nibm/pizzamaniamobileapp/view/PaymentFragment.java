@@ -2,6 +2,7 @@ package com.nibm.pizzamaniamobileapp.view;
 
 import static androidx.compose.ui.semantics.SemanticsPropertiesKt.dismiss;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -129,7 +130,7 @@ public class PaymentFragment extends BottomSheetDialogFragment {
                     Order order = new Order();
                     order.setItems(orderItems);
                     order.setTotalPrice(cartViewModel.getTotalPrice());
-                    order.setStatus("Pending");
+                    order.setStatus("pending");
                     order.setCreatedAt(Timestamp.now());
                     order.setBranchId(selectedBranchId);
                     order.setCustomerName(customerName != null ? customerName : "");
@@ -146,9 +147,13 @@ public class PaymentFragment extends BottomSheetDialogFragment {
                                 cartViewModel.clearCart();
                                 dismiss(); // Close the payment dialog
 
-                                // Navigate back to home or order confirmation
                                 if (getActivity() != null) {
-                                    getActivity().getSupportFragmentManager().popBackStack();
+                                    // Go to MainActivity → open Delivery tab with orderId
+                                    Intent intent = new Intent(getActivity(), MainActivity.class);
+                                    intent.putExtra("openDelivery", true);
+                                    intent.putExtra("orderId", order.getOrderId());
+                                    getActivity().startActivity(intent);
+                                    getActivity().finish();
                                 }
                             })
                             .addOnFailureListener(e -> {

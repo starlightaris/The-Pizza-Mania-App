@@ -63,7 +63,17 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        loadFragment(new HomeFragment(), true);
+        // Handle navigation intent (e.g., after placing order)
+        boolean openDelivery = getIntent().getBooleanExtra("openDelivery", false);
+        if (openDelivery) {
+            String orderId = getIntent().getStringExtra("orderId");
+            Fragment deliveryFragment = DeliveryFragment.newInstance(orderId);
+            loadFragment(deliveryFragment, true);
+            bottomNavigatinView.setSelectedItemId(R.id.navActivity); // highlight Delivery tab
+        } else {
+            loadFragment(new HomeFragment(), true);
+        }
+
     }
 
     private void loadFragment(Fragment fragment, boolean isAppInitialized) {
