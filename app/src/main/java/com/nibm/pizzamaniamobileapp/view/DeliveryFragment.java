@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.airbnb.lottie.LottieAnimationView;
@@ -20,6 +21,7 @@ public class DeliveryFragment extends Fragment {
     private TextView txtOrderDetails, txtStatus;
     private LottieAnimationView lottieStatus;
     private SupportMapFragment mapFragment;
+    private Button btnNextStatus;
 
     private enum OrderStatus { PENDING, PREPARING, OUT_FOR_DELIVERY, DELIVERED }
     private OrderStatus currentStatus = OrderStatus.PENDING;
@@ -33,13 +35,31 @@ public class DeliveryFragment extends Fragment {
         txtOrderDetails = view.findViewById(R.id.txtOrderDetails);
         txtStatus = view.findViewById(R.id.txtStatus);
         lottieStatus = view.findViewById(R.id.lottieStatus);
+        btnNextStatus = view.findViewById(R.id.btnNextStatus);
 
         mapFragment = (SupportMapFragment) getChildFragmentManager()
                 .findFragmentById(R.id.mapFragment);
 
-        // Example initial
         txtOrderDetails.setText("Order #145 | Bill: LKR 3200");
         updateUI(OrderStatus.PENDING);
+
+        // Cycle through statuses for testing
+        btnNextStatus.setOnClickListener(v -> {
+            switch (currentStatus) {
+                case PENDING:
+                    updateUI(OrderStatus.PREPARING);
+                    break;
+                case PREPARING:
+                    updateUI(OrderStatus.OUT_FOR_DELIVERY);
+                    break;
+                case OUT_FOR_DELIVERY:
+                    updateUI(OrderStatus.DELIVERED);
+                    break;
+                case DELIVERED:
+                    updateUI(OrderStatus.PENDING); // loop back
+                    break;
+            }
+        });
 
         return view;
     }
@@ -47,15 +67,12 @@ public class DeliveryFragment extends Fragment {
     private void updateUI(OrderStatus status) {
         currentStatus = status;
 
-        // Hide map initially
         if (mapFragment != null && mapFragment.getView() != null) {
             mapFragment.getView().setVisibility(View.GONE);
         }
 
-        // Update status label
         txtStatus.setText("Status: " + status.name());
 
-        // Handle animations
         lottieStatus.setVisibility(View.GONE);
         switch (status) {
             case PENDING:
@@ -83,14 +100,5 @@ public class DeliveryFragment extends Fragment {
                 break;
         }
     }
-
-    // Example: hook this to Firebase or repo updates
-    private void onStatusChangedFromServer(String newStatus) {
-        switch (newStatus) {
-            case "pending": updateUI(OrderStatus.PENDING); break;
-            case "preparing": updateUI(OrderStatus.PREPARING); break;
-            case "out": updateUI(OrderStatus.OUT_FOR_DELIVERY); break;
-            case "delivered": updateUI(OrderStatus.DELIVERED); break;
-        }
-    }
 }
+
