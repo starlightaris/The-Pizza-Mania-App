@@ -18,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -68,6 +69,15 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
     private LatLng branchLatLng;
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            String orderId = getArguments().getString("orderId");
+            // use orderId to load order details
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_delivery, container, false);
 
@@ -106,6 +116,15 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
 
         btnContact.setOnClickListener(v -> contactRestaurant());
     }
+
+    public static DeliveryFragment newInstance(String orderId) {
+        DeliveryFragment fragment = new DeliveryFragment();
+        Bundle args = new Bundle();
+        args.putString("orderId", orderId);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
 
     private void findCurrentOrder() {
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();

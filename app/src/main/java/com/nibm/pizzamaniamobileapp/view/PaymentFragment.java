@@ -2,6 +2,7 @@ package com.nibm.pizzamaniamobileapp.view;
 
 import static androidx.compose.ui.semantics.SemanticsPropertiesKt.dismiss;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -146,17 +147,20 @@ public class PaymentFragment extends BottomSheetDialogFragment {
                                 cartViewModel.clearCart();
                                 dismiss(); // Close the payment dialog
 
-                                // Navigate back to home or order confirmation
                                 if (getActivity() != null) {
-                                    getActivity().getSupportFragmentManager().popBackStack();
+                                    // Go to MainActivity → open Delivery tab with orderId
+                                    Intent intent = new Intent(getActivity(), MainActivity.class);
+                                    intent.putExtra("openDelivery", true);
+                                    intent.putExtra("orderId", order.getOrderId());
+                                    startActivity(intent);
+
+                                    // Optional: finish current activity if you don’t want users to navigate back here
+                                    getActivity().finish();
                                 }
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(getActivity(), "Failed to place order: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                             });
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getActivity(), "Failed to fetch user info: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 }
