@@ -48,6 +48,7 @@
             android:id="@+id/order_items_recycler"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/grey"
             android:nestedScrollingEnabled="false"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>
