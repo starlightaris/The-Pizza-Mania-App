@@ -10,25 +10,17 @@
         android:layout_height="wrap_content">
 
         <EditText
-            android:id="@+id/editFullName"
-            android:hint="Full Name"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-        <EditText
-            android:id="@+id/editPhone"
-            android:hint="Phone Number"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-        <EditText
             android:id="@+id/editStreet"
             android:hint="Street Address"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
+
         <EditText
             android:id="@+id/editCity"
             android:hint="City"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
+
         <EditText
             android:id="@+id/editPostal"
             android:hint="Postal Code"
@@ -41,5 +33,4 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </LinearLayout>
-
 </ScrollView>

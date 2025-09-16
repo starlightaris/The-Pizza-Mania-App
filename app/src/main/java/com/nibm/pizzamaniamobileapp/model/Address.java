@@ -1,25 +1,26 @@
 package com.nibm.pizzamaniamobileapp.model;
 
+import com.google.firebase.firestore.GeoPoint;
+
 public class Address {
     private String addressId;
-    private String fullName;
-    private String phone;
     private String street;
     private String city;
     private String postalCode;
     private boolean isDefault;
+    private GeoPoint geoPoint;
 
     public Address() {
     }
 
-    public Address(String addressId, String fullName, String phone, String street, String city, String postalCode, boolean isDefault) {
+    public Address(String addressId, String street, String city, String postalCode,
+                   boolean isDefault, GeoPoint geoPoint) {
         this.addressId = addressId;
-        this.fullName = fullName;
-        this.phone = phone;
         this.street = street;
         this.city = city;
         this.postalCode = postalCode;
         this.isDefault = isDefault;
+        this.geoPoint = geoPoint;
     }
 
     public String getAddressId() {
@@ -28,22 +29,6 @@ public class Address {
 
     public void setAddressId(String addressId) {
         this.addressId = addressId;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
     }
 
     public String getStreet() {
@@ -78,6 +63,14 @@ public class Address {
         isDefault = aDefault;
     }
 
+    public GeoPoint getGeoPoint() {
+        return geoPoint;
+    }
+
+    public void setGeoPoint(GeoPoint geoPoint) {
+        this.geoPoint = geoPoint;
+    }
+
     public String getFullAddress() {
         StringBuilder sb = new StringBuilder();
         if (street != null && !street.isEmpty()) sb.append(street);
@@ -86,5 +79,3 @@ public class Address {
         return sb.toString();
     }
 }
-
-

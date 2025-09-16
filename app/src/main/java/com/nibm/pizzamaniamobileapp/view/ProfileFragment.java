@@ -28,6 +28,7 @@ public class ProfileFragment extends Fragment {
     private RecyclerView recyclerAddresses;
     private Button btnAddAddress;
     private Button btnEditProfile;
+    private Button btnLogout, btnDeleteAccount;
     private AddressAdapter addressAdapter;
     private List<Address> addressList = new ArrayList<>();
     private ProfileViewModel profileViewModel;
@@ -44,6 +45,9 @@ public class ProfileFragment extends Fragment {
         recyclerAddresses = view.findViewById(R.id.recyclerAddresses);
         btnAddAddress = view.findViewById(R.id.btnAddAddress);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
+
+        btnLogout = view.findViewById(R.id.btnLogout);
+        btnDeleteAccount = view.findViewById(R.id.btnDeleteAccount);
 
         profileViewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
@@ -84,6 +88,18 @@ public class ProfileFragment extends Fragment {
             dialog.show(getChildFragmentManager(), "ProfileManagementDialog");
         });
 
+        btnLogout.setOnClickListener(v -> {
+            profileViewModel.logout();
+            requireActivity().finish(); // go back to login screen
+        });
+
+        btnDeleteAccount.setOnClickListener(v -> {
+            profileViewModel.deleteAccount(success -> {
+                if (success) {
+                    requireActivity().finish();
+                }
+            });
+        });
         return view;
     }
 }

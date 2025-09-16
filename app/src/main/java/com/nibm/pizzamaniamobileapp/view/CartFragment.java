@@ -24,6 +24,7 @@ import com.nibm.pizzamaniamobileapp.adapter.CartAdapter;
 import com.nibm.pizzamaniamobileapp.model.CartItem;
 import com.nibm.pizzamaniamobileapp.model.Order;
 import com.nibm.pizzamaniamobileapp.model.OrderItem;
+import com.nibm.pizzamaniamobileapp.utils.SessionManager;
 import com.nibm.pizzamaniamobileapp.viewmodel.CartViewModel;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class CartFragment extends Fragment {
     private TextView tvEmptyMessage;
     private Button btnCheckout;
     private CartViewModel cartViewModel;
+    private SessionManager sessionManager;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -46,10 +48,20 @@ public class CartFragment extends Fragment {
         totalPriceText = root.findViewById(R.id.cart_total_price);
         btnCheckout = root.findViewById(R.id.cart_checkout_btn);
 
+        sessionManager = new SessionManager(requireActivity());
+
         // Initialize adapter
         adapter = new CartAdapter(new ArrayList<>());
         cartRecycler.setLayoutManager(new LinearLayoutManager(getActivity()));
         cartRecycler.setAdapter(adapter);
+
+        // Set up item removal listener
+        adapter.setOnItemRemoveListener(new CartAdapter.OnItemRemoveListener() {
+            @Override
+            public void onItemRemoved(String menuId) {
+                cartViewModel.removeItem(menuId);
+            }
+        });
 
         // Empty cart message
         tvEmptyMessage = root.findViewById(R.id.tv_empty_cart);
@@ -64,6 +76,26 @@ public class CartFragment extends Fragment {
 
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
 
+        // Load cart from Firestore if user is logged in
+        if (sessionManager.isLoggedIn()) {
+            String userId = sessionManager.getUserId();
+            cartViewModel.setUserId(userId);
+            // In CartFragment.java - update the loadCartFromFirestore call:
+            cartViewModel.loadCartFromFirestore(userId, new CartViewModel.OnCartLoadedListener() {
+                @Override
+                public void onCartLoaded(boolean success) {
+                    if (!success) {
+                        System.out.println("DEBUG: Cart loading completed with failure status");
+                    } else {
+                        System.out.println("DEBUG: Cart loading completed successfully");
+                    }
+                }
+            });
+        } else {
+            // User not logged in, show empty cart
+            cartViewModel.clearCart();
+        }
+
         // Observe cart items
         cartViewModel.getCartItemsLiveData().observe(getViewLifecycleOwner(), cartItems -> {
             adapter.updateList(cartItems);
@@ -72,22 +104,18 @@ public class CartFragment extends Fragment {
             if (cartItems.isEmpty()) {
                 tvEmptyMessage.setVisibility(View.VISIBLE);
                 cartRecycler.setVisibility(View.GONE);
+                btnCheckout.setEnabled(false);
             } else {
                 tvEmptyMessage.setVisibility(View.GONE);
                 cartRecycler.setVisibility(View.VISIBLE);
+                btnCheckout.setEnabled(true);
             }
         });
 
         // Checkout click
         btnCheckout.setOnClickListener(v -> {
-            CheckoutFragment checkoutFragment = new CheckoutFragment();
-
-            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-            transaction.replace(R.id.frameLayout, checkoutFragment);
-            transaction.addToBackStack(null); //for back btn
-            transaction.commit();
+            checkout();
         });
-
 
         return root;
     }
@@ -141,9 +169,16 @@ public class CartFragment extends Fragment {
                             .addOnSuccessListener(aVoid -> {
                                 Toast.makeText(getActivity(), "Order placed!", Toast.LENGTH_SHORT).show();
                                 cartViewModel.clearCart();
+
+                                // Navigate to order confirmation or home
+                                getParentFragmentManager().popBackStack();
                             })
-                            .addOnFailureListener(e -> Toast.makeText(getActivity(), "Failed to place order", Toast.LENGTH_SHORT).show());
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(getActivity(), "Failed to place order: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
                 })
-                .addOnFailureListener(e -> Toast.makeText(getActivity(), "Failed to fetch user info", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getActivity(), "Failed to fetch user info: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 }

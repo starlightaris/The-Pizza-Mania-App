@@ -3,9 +3,11 @@ package com.nibm.pizzamaniamobileapp.adapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.nibm.pizzamaniamobileapp.R;
@@ -42,28 +44,46 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
     }
 
     public class AddressViewHolder extends RecyclerView.ViewHolder {
-        TextView txtName, txtStreet, txtCity, txtPhone;
+        TextView txtStreet, txtCity, txtPostal;
+        ImageButton btnEdit, btnDelete;
+        CardView cardView;
 
         public AddressViewHolder(@NonNull View itemView) {
             super(itemView);
-            txtName = itemView.findViewById(R.id.txtName);
             txtStreet = itemView.findViewById(R.id.txtStreet);
             txtCity = itemView.findViewById(R.id.txtCity);
-            txtPhone = itemView.findViewById(R.id.txtPhone);
+            txtPostal = itemView.findViewById(R.id.txtPostal);
+            btnEdit = itemView.findViewById(R.id.btnEdit);
+            btnDelete = itemView.findViewById(R.id.btnDelete);
+            cardView = itemView.findViewById(R.id.cardAddress);
 
-            itemView.setOnClickListener(v -> {
+            // Click events
+            cardView.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
                 if (pos != RecyclerView.NO_POSITION) {
                     listener.onAddressSelected(addressList.get(pos));
                 }
             });
+
+            btnEdit.setOnClickListener(v -> {
+                int pos = getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    listener.onEditAddress(addressList.get(pos));
+                }
+            });
+
+            btnDelete.setOnClickListener(v -> {
+                int pos = getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    listener.onDeleteAddress(addressList.get(pos));
+                }
+            });
         }
 
         public void bind(Address address) {
-            txtName.setText(address.getFullName());
             txtStreet.setText(address.getStreet());
             txtCity.setText(address.getCity());
-            txtPhone.setText(address.getPhone());
+            txtPostal.setText(address.getPostalCode());
         }
     }
 
@@ -79,5 +99,4 @@ public class AddressAdapter extends RecyclerView.Adapter<AddressAdapter.AddressV
         addressList.addAll(newList);
         notifyDataSetChanged();
     }
-
 }
