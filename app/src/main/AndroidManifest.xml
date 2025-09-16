@@ -16,11 +16,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PizzaManiaMobileApp" >
         <activity
-            android:name=".view.AddressManagementDialog"
-            android:exported="false"
-            android:label="@string/title_activity_address_management_dialog"
-            android:theme="@style/Theme.PizzaManiaMobileApp" />
-        <activity
             android:name=".view.OrderManagementActivity"
             android:exported="false" />
         <activity
