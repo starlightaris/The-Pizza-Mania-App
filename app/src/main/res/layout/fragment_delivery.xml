@@ -1,70 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white">
 
+    <!-- Map (hidden by default) -->
     <com.google.android.gms.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 
-    <!-- Header with order status and animation -->
+    <!-- Centered animation overlay -->
     <LinearLayout
+        android:id="@+id/animationContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:background="@android:color/white"
-        android:elevation="8dp"
-        android:orientation="horizontal"
-        android:padding="16dp">
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
 
         <com.airbnb.lottie.LottieAnimationView
             android:id="@+id/animationStatus"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
             app:lottie_autoPlay="true"
             app:lottie_loop="true" />
 
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvOrderStatus"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="16dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvOrderStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <!-- Delivery progress bar -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/bottomCard"
-        android:orientation="vertical"
-        android:padding="16dp">
+            android:text=""
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
 
         <TextView
             android:id="@+id/tvProgressText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:layout_marginTop="8dp" />
 
         <ProgressBar
             android:id="@+id/progressDelivery"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            android:layout_width="match_parent"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:progress="0" />
@@ -76,7 +59,7 @@
         android:id="@+id/bottomCard"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom"
         app:cardElevation="8dp">
 
         <ScrollView
@@ -139,7 +122,6 @@
                         android:text=""
                         android:textSize="16sp"
                         android:textStyle="bold" />
-
                 </LinearLayout>
 
                 <Button
@@ -151,9 +133,7 @@
                     style="@style/Widget.AppCompat.Button.Borderless" />
 
             </LinearLayout>
-
         </ScrollView>
-
     </androidx.cardview.widget.CardView>
 
-</RelativeLayout>
+</FrameLayout>

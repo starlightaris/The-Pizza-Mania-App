@@ -1,7 +1,6 @@
 package com.nibm.pizzamaniamobileapp.view;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -30,8 +29,8 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -39,10 +38,12 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.maps.android.PolyUtil;
 import com.nibm.pizzamaniamobileapp.R;
 import com.nibm.pizzamaniamobileapp.model.Order;
 import com.nibm.pizzamaniamobileapp.utils.LocationService;
@@ -55,18 +56,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import android.graphics.Color;
-import android.os.AsyncTask;
-
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.maps.android.PolyUtil;  // from Maps Utils library
-
-
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-
 
 public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
 
@@ -77,9 +69,9 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
 
     // UI Elements
     private LottieAnimationView animationStatus;
+    private LinearLayout animationContainer;
     private TextView tvOrderStatus, tvProgressText, tvDeliveryAddress, tvCustomerName, tvTotalPrice;
     private ProgressBar progressDelivery;
-    private LinearLayout itemsContainer;
     private Button btnContact;
 
     // Map elements
@@ -90,10 +82,6 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            String orderId = getArguments().getString("orderId");
-            // use orderId to load order details
-        }
     }
 
     @Override
@@ -106,8 +94,7 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
         // Initialize UI elements
         initializeUI(view);
 
-        // Map setup
-        mapView = view.findViewById(R.id.mapView);
+        // MapView lifecycle
         mapView.onCreate(savedInstanceState);
         mapView.onResume();
         mapView.getMapAsync(this);
@@ -115,22 +102,23 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
         // Location service
         locationService = new LocationService(requireContext());
 
-        // Find current order
+        // Load current order
         findCurrentOrder();
-
         setupObservers();
 
         return view;
     }
 
     private void initializeUI(View view) {
+        mapView = view.findViewById(R.id.mapView);
+        animationContainer = view.findViewById(R.id.animationContainer);
         animationStatus = view.findViewById(R.id.animationStatus);
         tvOrderStatus = view.findViewById(R.id.tvOrderStatus);
         tvProgressText = view.findViewById(R.id.tvProgressText);
-        tvDeliveryAddress = view.findViewById(R.id.tvDeliveryAddress);
-        tvCustomerName = view.findViewById(R.id.tvCustomerName);
-        tvTotalPrice = view.findViewById(R.id.tvTotalPrice);
         progressDelivery = view.findViewById(R.id.progressDelivery);
+        tvCustomerName = view.findViewById(R.id.tvCustomerName);
+        tvDeliveryAddress = view.findViewById(R.id.tvDeliveryAddress);
+        tvTotalPrice = view.findViewById(R.id.tvTotalPrice);
         btnContact = view.findViewById(R.id.btnContact);
 
         btnContact.setOnClickListener(v -> contactRestaurant());
@@ -144,12 +132,11 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
         return fragment;
     }
 
-
     private void findCurrentOrder() {
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseFirestore.getInstance().collection("orders")
                 .whereEqualTo("userId", userId)
-                .whereIn("status", Arrays.asList(new String[]{"pending", "preparing", "out_for_delivery"}))
+                .whereIn("status", Arrays.asList("pending", "preparing", "out_for_delivery"))
                 .limit(1)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -162,9 +149,7 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
                         showNoActiveOrders();
                     }
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error finding orders: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> Toast.makeText(requireContext(), "Error finding orders: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void fetchOrderDetails(String orderId) {
@@ -201,9 +186,7 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
         viewModel.getOrderLiveData().observe(getViewLifecycleOwner(), this::updateOrderUI);
         viewModel.getUserLocationLiveData().observe(getViewLifecycleOwner(), this::updateUserLocation);
         viewModel.getErrorLiveData().observe(getViewLifecycleOwner(), error -> {
-            if (error != null) {
-                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
-            }
+            if (error != null) Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -212,6 +195,20 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
 
         updateStatusUI(order.getStatus());
         updateProgress(order.getStatus());
+
+        switch (order.getStatus()) {
+            case "pending":
+            case "preparing":
+            case "delivered":
+                mapView.setVisibility(View.GONE);
+                animationContainer.setVisibility(View.VISIBLE);
+                break;
+
+            case "out_for_delivery":
+                mapView.setVisibility(View.VISIBLE);
+                animationContainer.setVisibility(View.GONE);
+                break;
+        }
 
         if ("delivered".equals(order.getStatus())) {
             locationService.stopLocationUpdates();
@@ -278,6 +275,8 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
         tvOrderStatus.setText("No active deliveries");
         animationStatus.setAnimation(R.raw.empty_state);
         animationStatus.playAnimation();
+        mapView.setVisibility(View.GONE);
+        animationContainer.setVisibility(View.VISIBLE);
     }
 
     private void contactRestaurant() {
@@ -289,11 +288,8 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
         googleMap = map;
         setupMap();
 
-        if (checkLocationPermission()) {
-            startLocationTracking();
-        } else {
-            requestLocationPermission();
-        }
+        if (checkLocationPermission()) startLocationTracking();
+        else requestLocationPermission();
     }
 
     private void setupMap() {
@@ -305,17 +301,14 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
         googleMap.getUiSettings().setZoomGesturesEnabled(true);
         googleMap.getUiSettings().setScrollGesturesEnabled(true);
 
-        // Only enable location if permission is granted
-        if (ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             googleMap.setMyLocationEnabled(true);
             googleMap.getUiSettings().setMyLocationButtonEnabled(true);
         }
     }
 
     private boolean checkLocationPermission() {
-        return ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void startLocationTracking() {
@@ -340,30 +333,22 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
 
     private void updateUserMarker(LatLng position) {
         if (googleMap != null) {
-            if (userMarker != null) {
-                userMarker.setPosition(position);
-            } else {
-                userMarker = googleMap.addMarker(new MarkerOptions()
-                        .position(position)
-                        .title("Your Location")
-                        .icon(bitmapDescriptorFromVector(R.drawable.ic_user_location)));
-            }
+            if (userMarker != null) userMarker.setPosition(position);
+            else userMarker = googleMap.addMarker(new MarkerOptions()
+                    .position(position)
+                    .title("Your Location")
+                    .icon(bitmapDescriptorFromVector(R.drawable.ic_user_location)));
         }
     }
 
     private void addBranchMarker() {
         if (googleMap != null && branchLatLng != null) {
             if (branchMarker != null) branchMarker.remove();
-
             branchMarker = googleMap.addMarker(new MarkerOptions()
                     .position(branchLatLng)
                     .title("Restaurant")
                     .icon(bitmapDescriptorFromVector(R.drawable.ic_restaurant)));
-
-            // Center camera on branch when first loaded
-            if (userMarker == null) {
-                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(branchLatLng, 15));
-            }
+            if (userMarker == null) googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(branchLatLng, 15));
         }
     }
 
@@ -386,49 +371,29 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
 
     private BitmapDescriptor bitmapDescriptorFromVector(int vectorResId) {
         Drawable vectorDrawable = ContextCompat.getDrawable(requireContext(), vectorResId);
-        if (vectorDrawable == null) {
-            return BitmapDescriptorFactory.defaultMarker(); // fallback if resource not found
-        }
-        vectorDrawable.setBounds(0, 0,
-                vectorDrawable.getIntrinsicWidth(),
-                vectorDrawable.getIntrinsicHeight());
-
-        Bitmap bitmap = Bitmap.createBitmap(
-                vectorDrawable.getIntrinsicWidth(),
-                vectorDrawable.getIntrinsicHeight(),
-                Bitmap.Config.ARGB_8888);
-
+        if (vectorDrawable == null) return BitmapDescriptorFactory.defaultMarker();
+        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight());
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         vectorDrawable.draw(canvas);
         return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
-
-
     private void requestLocationPermission() {
-        requestPermissions(new String[]{
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-        }, 1001);
+        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1001);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1001) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startLocationTracking();
-                if (googleMap != null) {
-                    // Add permission check before enabling location
-                    if (ActivityCompat.checkSelfPermission(requireContext(),
-                            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                        googleMap.setMyLocationEnabled(true);
-                        googleMap.getUiSettings().setMyLocationButtonEnabled(true);
-                    }
-                }
-            } else {
-                Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
+        if (requestCode == 1001 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startLocationTracking();
+            if (googleMap != null && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                googleMap.setMyLocationEnabled(true);
+                googleMap.getUiSettings().setMyLocationButtonEnabled(true);
             }
+        } else {
+            Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -444,37 +409,27 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private class FetchRouteTask extends AsyncTask<String, Void, List<LatLng>> {
-
         @Override
         protected List<LatLng> doInBackground(String... strings) {
             String url = strings[0];
             OkHttpClient client = new OkHttpClient();
-
-            Request request = new Request.Builder()
-                    .url(url)
-                    .build();
+            Request request = new Request.Builder().url(url).build();
 
             try (Response response = client.newCall(request).execute()) {
                 if (response.body() == null) return null;
 
                 String json = response.body().string();
                 JSONObject obj = new JSONObject(json);
-                JSONArray steps = obj.getJSONArray("routes")
-                        .getJSONObject(0)
-                        .getJSONArray("legs")
-                        .getJSONObject(0)
+                JSONArray steps = obj.getJSONArray("routes").getJSONObject(0)
+                        .getJSONArray("legs").getJSONObject(0)
                         .getJSONArray("steps");
 
                 List<LatLng> poly = new ArrayList<>();
                 for (int i = 0; i < steps.length(); i++) {
-                    String polyline = steps.getJSONObject(i)
-                            .getJSONObject("polyline")
-                            .getString("points");
-                    poly.addAll(PolyUtil.decode(polyline)); // decode polyline using Maps Utils
+                    String polyline = steps.getJSONObject(i).getJSONObject("polyline").getString("points");
+                    poly.addAll(PolyUtil.decode(polyline));
                 }
-
                 return poly;
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -484,19 +439,11 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
         @Override
         protected void onPostExecute(List<LatLng> points) {
             if (points != null && googleMap != null) {
-                if (routePolyline != null) routePolyline.remove(); // remove old polyline if any
-
-                PolylineOptions options = new PolylineOptions()
-                        .addAll(points)
-                        .color(Color.BLUE)
-                        .width(10);
-
-                routePolyline = googleMap.addPolyline(options);
+                if (routePolyline != null) routePolyline.remove();
+                routePolyline = googleMap.addPolyline(new PolylineOptions().addAll(points).color(0xFF2196F3).width(10));
             }
         }
     }
-
-
 
     @Override
     public void onResume() {
