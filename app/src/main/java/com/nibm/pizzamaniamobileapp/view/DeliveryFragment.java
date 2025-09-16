@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,7 +48,25 @@ import com.nibm.pizzamaniamobileapp.model.Order;
 import com.nibm.pizzamaniamobileapp.utils.LocationService;
 import com.nibm.pizzamaniamobileapp.viewmodel.DeliveryViewModel;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
+import android.graphics.Color;
+import android.os.AsyncTask;
+
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.PolyUtil;  // from Maps Utils library
+
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 
 public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
 
@@ -412,6 +431,72 @@ public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
             }
         }
     }
+
+    private void drawRoute(LatLng origin, LatLng destination) {
+        String apiKey = getString(R.string.google_maps_key);
+        String url = "https://maps.googleapis.com/maps/api/directions/json" +
+                "?origin=" + origin.latitude + "," + origin.longitude +
+                "&destination=" + destination.latitude + "," + destination.longitude +
+                "&mode=driving" +
+                "&key=" + apiKey;
+
+        new FetchRouteTask().execute(url);
+    }
+
+    private class FetchRouteTask extends AsyncTask<String, Void, List<LatLng>> {
+
+        @Override
+        protected List<LatLng> doInBackground(String... strings) {
+            String url = strings[0];
+            OkHttpClient client = new OkHttpClient();
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                if (response.body() == null) return null;
+
+                String json = response.body().string();
+                JSONObject obj = new JSONObject(json);
+                JSONArray steps = obj.getJSONArray("routes")
+                        .getJSONObject(0)
+                        .getJSONArray("legs")
+                        .getJSONObject(0)
+                        .getJSONArray("steps");
+
+                List<LatLng> poly = new ArrayList<>();
+                for (int i = 0; i < steps.length(); i++) {
+                    String polyline = steps.getJSONObject(i)
+                            .getJSONObject("polyline")
+                            .getString("points");
+                    poly.addAll(PolyUtil.decode(polyline)); // decode polyline using Maps Utils
+                }
+
+                return poly;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(List<LatLng> points) {
+            if (points != null && googleMap != null) {
+                if (routePolyline != null) routePolyline.remove(); // remove old polyline if any
+
+                PolylineOptions options = new PolylineOptions()
+                        .addAll(points)
+                        .color(Color.BLUE)
+                        .width(10);
+
+                routePolyline = googleMap.addPolyline(options);
+            }
+        }
+    }
+
+
 
     @Override
     public void onResume() {

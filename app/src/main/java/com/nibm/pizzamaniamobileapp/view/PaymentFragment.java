@@ -130,7 +130,7 @@ public class PaymentFragment extends BottomSheetDialogFragment {
                     Order order = new Order();
                     order.setItems(orderItems);
                     order.setTotalPrice(cartViewModel.getTotalPrice());
-                    order.setStatus("Pending");
+                    order.setStatus("pending");
                     order.setCreatedAt(Timestamp.now());
                     order.setBranchId(selectedBranchId);
                     order.setCustomerName(customerName != null ? customerName : "");
@@ -152,15 +152,16 @@ public class PaymentFragment extends BottomSheetDialogFragment {
                                     Intent intent = new Intent(getActivity(), MainActivity.class);
                                     intent.putExtra("openDelivery", true);
                                     intent.putExtra("orderId", order.getOrderId());
-                                    startActivity(intent);
-
-                                    // Optional: finish current activity if you don’t want users to navigate back here
+                                    getActivity().startActivity(intent);
                                     getActivity().finish();
                                 }
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(getActivity(), "Failed to place order: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                             });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getActivity(), "Failed to fetch user info: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 }
