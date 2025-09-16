@@ -15,7 +15,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.nibm.pizzamaniamobileapp.R;
+import com.nibm.pizzamaniamobileapp.utils.SessionManager;
 import com.nibm.pizzamaniamobileapp.viewmodel.UserViewModel;
 
 public class LoginActivity extends AppCompatActivity {
@@ -23,6 +26,7 @@ public class LoginActivity extends AppCompatActivity {
     private Button loginBtn;
     private TextView signUpLink;
     private UserViewModel userViewModel;
+    private SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +38,15 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        sessionManager = new SessionManager(this);
+
+        // Check if user is already logged in
+        if (sessionManager.isLoggedIn()) {
+            navigateToMainActivity();
+            return;
+        }
+
         emailInput = findViewById(R.id.txtEmail);
         passwordInput = findViewById(R.id.txtPass);
         loginBtn = findViewById(R.id.btnLogin);
@@ -46,23 +59,38 @@ public class LoginActivity extends AppCompatActivity {
             String password = passwordInput.getText().toString().trim();
             userViewModel.login(email, password);
         });
+
         signUpLink.setOnClickListener(v -> {
             startActivity(new Intent(LoginActivity.this, RegistrationActivity.class));
         });
+
         userViewModel.getErrorMessage().observe(this, msg ->
                 Toast.makeText(this, "Error: " + msg, Toast.LENGTH_SHORT).show());
+
         userViewModel.getRoleLiveData().observe(this, role -> {
             if (role != null) {
                 Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
+
+                // Create login session
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (currentUser != null) {
+                    sessionManager.createLoginSession(currentUser.getUid(), currentUser.getEmail());
+                }
+
                 if (role.equals("admin")) {
                     // Redirect to admin dashboard
                     startActivity(new Intent(LoginActivity.this, DashboardActivity.class));
                 } else {
                     // Redirect to customer home page
-                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    navigateToMainActivity();
                 }
                 finish();
             }
         });
+    }
+
+    private void navigateToMainActivity() {
+        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+        finish();
     }
 }

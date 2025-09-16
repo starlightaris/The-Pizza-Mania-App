@@ -77,8 +77,11 @@ public class HomeMenuAdapter extends RecyclerView.Adapter<HomeMenuAdapter.MenuVi
             if (listener != null) listener.onItemClick(item);
         });
 
+        // In HomeMenuAdapter.java - update the add click listener:
         holder.btnAdd.setOnClickListener(v -> {
-            int updatedCount = cartViewModel.addItem(item); // returns updated count
+            String userId = cartViewModel.getUserId();
+            System.out.println("DEBUG: Adding item with userId: " + userId);
+            int updatedCount = cartViewModel.addItem(item);
             holder.tvCartCount.setText(String.valueOf(updatedCount));
             holder.tvCartCount.setVisibility(View.VISIBLE);
             if (listener != null) listener.onAddClick(item);

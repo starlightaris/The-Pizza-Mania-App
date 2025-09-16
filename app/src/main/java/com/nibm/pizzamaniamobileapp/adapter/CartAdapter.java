@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,9 +19,18 @@ import java.util.List;
 public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder> {
 
     private List<CartItem> cartItems;
+    private OnItemRemoveListener removeListener;
+
+    public interface OnItemRemoveListener {
+        void onItemRemoved(String menuId);
+    }
 
     public CartAdapter(List<CartItem> cartItems) {
         this.cartItems = cartItems;
+    }
+
+    public void setOnItemRemoveListener(OnItemRemoveListener listener) {
+        this.removeListener = listener;
     }
 
     @NonNull
@@ -45,6 +55,13 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         } else {
             holder.image.setImageResource(R.drawable.icon_pizza);
         }
+
+        // Set up remove button click listener
+        holder.removeButton.setOnClickListener(v -> {
+            if (removeListener != null) {
+                removeListener.onItemRemoved(item.getMenuId());
+            }
+        });
     }
 
     @Override
@@ -60,6 +77,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     static class CartViewHolder extends RecyclerView.ViewHolder {
         ImageView image;
         TextView name, quantity, price;
+        Button removeButton;
 
         public CartViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -67,6 +85,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
             name = itemView.findViewById(R.id.cart_item_name);
             quantity = itemView.findViewById(R.id.cart_item_quantity);
             price = itemView.findViewById(R.id.cart_item_price);
+            removeButton = itemView.findViewById(R.id.cart_item_remove);
         }
     }
 }
