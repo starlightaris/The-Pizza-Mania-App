@@ -37,6 +37,7 @@ android {
 
 dependencies {
 
+    implementation("com.airbnb.android:lottie:6.4.0")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
@@ -55,6 +56,7 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
+    implementation(libs.play.services.maps)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.ui.test.junit4)
     annotationProcessor (libs.compiler)

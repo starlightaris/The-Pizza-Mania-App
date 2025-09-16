@@ -1,15 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp"
     tools:context=".view.DeliveryFragment">
 
+    <!-- Order Details -->
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:textSize="16sp"
+        android:id="@+id/txtOrderDetails"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Order #123 | Bill: LKR 2500"
+        android:textSize="18sp"
         android:textStyle="bold"
-        android:text="Delivery Fragment" />
-</FrameLayout>
+        android:paddingBottom="8dp"/>
+
+    <!-- Status -->
+    <TextView
+        android:id="@+id/txtStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Status: Pending"
+        android:textSize="16sp"
+        android:paddingBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnNextStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Next Status"
+        android:layout_gravity="center"
+        android:layout_marginTop="16dp"/>
+
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:visibility="gone" />
+
+
+
+    <!-- Pending / Preparing / Out for Delivery UI -->
+    <FrameLayout
+        android:id="@+id/statusContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieStatus"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
+            android:layout_gravity="center"
+            app:lottie_loop="true"
+            app:lottie_autoPlay="true"
+            android:visibility="gone"/>
+
+    </FrameLayout>
+</LinearLayout>
