@@ -38,6 +38,12 @@ android {
 dependencies {
 
     implementation("com.airbnb.android:lottie:6.4.0")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.maps.android:android-maps-utils:3.8.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+    implementation("androidx.fragment:fragment-ktx:1.6.1")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)

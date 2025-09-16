@@ -1,104 +1,422 @@
 package com.nibm.pizzamaniamobileapp.view;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.airbnb.lottie.LottieAnimationView;
-import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 import com.nibm.pizzamaniamobileapp.R;
+import com.nibm.pizzamaniamobileapp.model.Order;
+import com.nibm.pizzamaniamobileapp.utils.LocationService;
+import com.nibm.pizzamaniamobileapp.viewmodel.DeliveryViewModel;
 
-public class DeliveryFragment extends Fragment {
+import java.util.Arrays;
 
-    private TextView txtOrderDetails, txtStatus;
-    private LottieAnimationView lottieStatus;
-    private SupportMapFragment mapFragment;
-    private Button btnNextStatus;
+public class DeliveryFragment extends Fragment implements OnMapReadyCallback {
 
-    private enum OrderStatus { PENDING, PREPARING, OUT_FOR_DELIVERY, DELIVERED }
-    private OrderStatus currentStatus = OrderStatus.PENDING;
+    private GoogleMap googleMap;
+    private MapView mapView;
+    private DeliveryViewModel viewModel;
+    private LocationService locationService;
 
-    @Nullable
+    // UI Elements
+    private LottieAnimationView animationStatus;
+    private TextView tvOrderStatus, tvProgressText, tvDeliveryAddress, tvCustomerName, tvTotalPrice;
+    private ProgressBar progressDelivery;
+    private LinearLayout itemsContainer;
+    private Button btnContact;
+
+    // Map elements
+    private Marker userMarker, branchMarker;
+    private Polyline routePolyline;
+    private LatLng branchLatLng;
+
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_delivery, container, false);
 
-        txtOrderDetails = view.findViewById(R.id.txtOrderDetails);
-        txtStatus = view.findViewById(R.id.txtStatus);
-        lottieStatus = view.findViewById(R.id.lottieStatus);
-        btnNextStatus = view.findViewById(R.id.btnNextStatus);
+        // Initialize ViewModel
+        viewModel = new ViewModelProvider(this).get(DeliveryViewModel.class);
 
-        mapFragment = (SupportMapFragment) getChildFragmentManager()
-                .findFragmentById(R.id.mapFragment);
+        // Initialize UI elements
+        initializeUI(view);
 
-        txtOrderDetails.setText("Order #145 | Bill: LKR 3200");
-        updateUI(OrderStatus.PENDING);
+        // Map setup
+        mapView = view.findViewById(R.id.mapView);
+        mapView.onCreate(savedInstanceState);
+        mapView.onResume();
+        mapView.getMapAsync(this);
 
-        // Cycle through statuses for testing
-        btnNextStatus.setOnClickListener(v -> {
-            switch (currentStatus) {
-                case PENDING:
-                    updateUI(OrderStatus.PREPARING);
-                    break;
-                case PREPARING:
-                    updateUI(OrderStatus.OUT_FOR_DELIVERY);
-                    break;
-                case OUT_FOR_DELIVERY:
-                    updateUI(OrderStatus.DELIVERED);
-                    break;
-                case DELIVERED:
-                    updateUI(OrderStatus.PENDING); // loop back
-                    break;
-            }
-        });
+        // Location service
+        locationService = new LocationService(requireContext());
+
+        // Find current order
+        findCurrentOrder();
+
+        setupObservers();
 
         return view;
     }
 
-    private void updateUI(OrderStatus status) {
-        currentStatus = status;
+    private void initializeUI(View view) {
+        animationStatus = view.findViewById(R.id.animationStatus);
+        tvOrderStatus = view.findViewById(R.id.tvOrderStatus);
+        tvProgressText = view.findViewById(R.id.tvProgressText);
+        tvDeliveryAddress = view.findViewById(R.id.tvDeliveryAddress);
+        tvCustomerName = view.findViewById(R.id.tvCustomerName);
+        tvTotalPrice = view.findViewById(R.id.tvTotalPrice);
+        progressDelivery = view.findViewById(R.id.progressDelivery);
+        btnContact = view.findViewById(R.id.btnContact);
 
-        if (mapFragment != null && mapFragment.getView() != null) {
-            mapFragment.getView().setVisibility(View.GONE);
-        }
+        btnContact.setOnClickListener(v -> contactRestaurant());
+    }
 
-        txtStatus.setText("Status: " + status.name());
+    private void findCurrentOrder() {
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore.getInstance().collection("orders")
+                .whereEqualTo("userId", userId)
+                .whereIn("status", Arrays.asList(new String[]{"pending", "preparing", "out_for_delivery"}))
+                .limit(1)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        DocumentSnapshot document = queryDocumentSnapshots.getDocuments().get(0);
+                        String orderId = document.getId();
+                        viewModel.startListeningToOrder(orderId);
+                        fetchOrderDetails(orderId);
+                    } else {
+                        showNoActiveOrders();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Error finding orders: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
 
-        lottieStatus.setVisibility(View.GONE);
-        switch (status) {
-            case PENDING:
-                lottieStatus.setAnimation(R.raw.processing);
-                lottieStatus.setVisibility(View.VISIBLE);
-                lottieStatus.playAnimation();
-                break;
+    private void fetchOrderDetails(String orderId) {
+        FirebaseFirestore.getInstance().collection("orders").document(orderId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        Order order = documentSnapshot.toObject(Order.class);
+                        if (order != null) {
+                            fetchBranchLocation(order.getBranchId());
+                            tvDeliveryAddress.setText(order.getDeliveryAddress());
+                            tvCustomerName.setText(order.getCustomerName());
+                            tvTotalPrice.setText(String.format("$%.2f", order.getTotalPrice()));
+                        }
+                    }
+                });
+    }
 
-            case PREPARING:
-                lottieStatus.setAnimation(R.raw.cooking);
-                lottieStatus.setVisibility(View.VISIBLE);
-                lottieStatus.playAnimation();
-                break;
+    private void fetchBranchLocation(String branchId) {
+        FirebaseFirestore.getInstance().collection("branches").document(branchId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        GeoPoint geoPoint = documentSnapshot.getGeoPoint("location");
+                        if (geoPoint != null) {
+                            branchLatLng = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+                            addBranchMarker();
+                        }
+                    }
+                });
+    }
 
-            case OUT_FOR_DELIVERY:
-                if (mapFragment != null && mapFragment.getView() != null) {
-                    mapFragment.getView().setVisibility(View.VISIBLE);
-                }
-                break;
+    private void setupObservers() {
+        viewModel.getOrderLiveData().observe(getViewLifecycleOwner(), this::updateOrderUI);
+        viewModel.getUserLocationLiveData().observe(getViewLifecycleOwner(), this::updateUserLocation);
+        viewModel.getErrorLiveData().observe(getViewLifecycleOwner(), error -> {
+            if (error != null) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
-            case DELIVERED:
-                lottieStatus.setAnimation(R.raw.check);
-                lottieStatus.setVisibility(View.VISIBLE);
-                lottieStatus.playAnimation();
-                break;
+    private void updateOrderUI(Order order) {
+        if (order == null) return;
+
+        updateStatusUI(order.getStatus());
+        updateProgress(order.getStatus());
+
+        if ("delivered".equals(order.getStatus())) {
+            locationService.stopLocationUpdates();
+            Toast.makeText(requireContext(), "Order delivered successfully!", Toast.LENGTH_SHORT).show();
         }
     }
-}
 
+    private void updateStatusUI(String status) {
+        int animationRes = R.raw.processing;
+        String statusText = "Order Received";
+
+        switch (status) {
+            case "pending":
+                animationRes = R.raw.processing;
+                statusText = "Order Received";
+                break;
+            case "preparing":
+                animationRes = R.raw.cooking;
+                statusText = "Preparing Your Order";
+                break;
+            case "out_for_delivery":
+                animationRes = R.raw.processing;
+                statusText = "Out for Delivery";
+                break;
+            case "delivered":
+                animationRes = R.raw.check;
+                statusText = "Delivered";
+                break;
+        }
+
+        tvOrderStatus.setText(statusText);
+        animationStatus.setAnimation(animationRes);
+        animationStatus.playAnimation();
+    }
+
+    private void updateProgress(String status) {
+        int progress = 0;
+        String progressText = "";
+
+        switch (status) {
+            case "pending":
+                progress = 25;
+                progressText = "Order Received";
+                break;
+            case "preparing":
+                progress = 50;
+                progressText = "Preparing Food";
+                break;
+            case "out_for_delivery":
+                progress = 75;
+                progressText = "On the Way";
+                break;
+            case "delivered":
+                progress = 100;
+                progressText = "Delivered";
+                break;
+        }
+
+        progressDelivery.setProgress(progress);
+        tvProgressText.setText(progressText);
+    }
+
+    private void showNoActiveOrders() {
+        tvOrderStatus.setText("No active deliveries");
+        animationStatus.setAnimation(R.raw.empty_state);
+        animationStatus.playAnimation();
+    }
+
+    private void contactRestaurant() {
+        Toast.makeText(requireContext(), "Contacting restaurant...", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onMapReady(GoogleMap map) {
+        googleMap = map;
+        setupMap();
+
+        if (checkLocationPermission()) {
+            startLocationTracking();
+        } else {
+            requestLocationPermission();
+        }
+    }
+
+    private void setupMap() {
+        if (googleMap == null) return;
+
+        googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
+        googleMap.getUiSettings().setCompassEnabled(true);
+        googleMap.getUiSettings().setZoomGesturesEnabled(true);
+        googleMap.getUiSettings().setScrollGesturesEnabled(true);
+
+        // Only enable location if permission is granted
+        if (ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            googleMap.setMyLocationEnabled(true);
+            googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+        }
+    }
+
+    private boolean checkLocationPermission() {
+        return ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void startLocationTracking() {
+        LocationCallback locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult != null) {
+                    Location location = locationResult.getLastLocation();
+                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    viewModel.updateUserLocation(latLng);
+                }
+            }
+        };
+
+        locationService.startLocationUpdates(locationCallback);
+    }
+
+    private void updateUserLocation(LatLng location) {
+        updateUserMarker(location);
+        updateCameraPosition(location);
+    }
+
+    private void updateUserMarker(LatLng position) {
+        if (googleMap != null) {
+            if (userMarker != null) {
+                userMarker.setPosition(position);
+            } else {
+                userMarker = googleMap.addMarker(new MarkerOptions()
+                        .position(position)
+                        .title("Your Location")
+                        .icon(bitmapDescriptorFromVector(R.drawable.ic_user_location)));
+            }
+        }
+    }
+
+    private void addBranchMarker() {
+        if (googleMap != null && branchLatLng != null) {
+            if (branchMarker != null) branchMarker.remove();
+
+            branchMarker = googleMap.addMarker(new MarkerOptions()
+                    .position(branchLatLng)
+                    .title("Restaurant")
+                    .icon(bitmapDescriptorFromVector(R.drawable.ic_restaurant)));
+
+            // Center camera on branch when first loaded
+            if (userMarker == null) {
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(branchLatLng, 15));
+            }
+        }
+    }
+
+    private void updateCameraPosition(LatLng userLocation) {
+        if (userLocation != null && branchLatLng != null) {
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            builder.include(userLocation);
+            builder.include(branchLatLng);
+
+            try {
+                LatLngBounds bounds = builder.build();
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
+            } catch (IllegalStateException e) {
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15));
+            }
+        } else if (userLocation != null) {
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15));
+        }
+    }
+
+    private BitmapDescriptor bitmapDescriptorFromVector(int vectorResId) {
+        Drawable vectorDrawable = ContextCompat.getDrawable(requireContext(), vectorResId);
+        if (vectorDrawable == null) {
+            return BitmapDescriptorFactory.defaultMarker(); // fallback if resource not found
+        }
+        vectorDrawable.setBounds(0, 0,
+                vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight());
+
+        Bitmap bitmap = Bitmap.createBitmap(
+                vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight(),
+                Bitmap.Config.ARGB_8888);
+
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
+
+
+    private void requestLocationPermission() {
+        requestPermissions(new String[]{
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+        }, 1001);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1001) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startLocationTracking();
+                if (googleMap != null) {
+                    // Add permission check before enabling location
+                    if (ActivityCompat.checkSelfPermission(requireContext(),
+                            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                        googleMap.setMyLocationEnabled(true);
+                        googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+                    }
+                }
+            } else {
+                Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mapView.onPause();
+        locationService.stopLocationUpdates();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+        locationService.stopLocationUpdates();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
+}
