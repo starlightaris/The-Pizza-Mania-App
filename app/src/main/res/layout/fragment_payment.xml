@@ -20,4 +20,13 @@
         android:text="Add Payment Method"
         android:layout_marginTop="12dp"/>
 
+    <Button
+        android:id="@+id/btnConfirmOrder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Confirm Order"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="@color/black"
+        android:textColor="@color/white"/>
+
 </LinearLayout>

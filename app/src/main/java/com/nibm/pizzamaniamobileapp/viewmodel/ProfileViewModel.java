@@ -19,54 +19,51 @@ public class ProfileViewModel extends ViewModel {
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    private MutableLiveData<String> userName = new MutableLiveData<>();
-    private MutableLiveData<String> email = new MutableLiveData<>();
-    private MutableLiveData<String> phone = new MutableLiveData<>();
+    private final MutableLiveData<String> userName = new MutableLiveData<>();
+    private final MutableLiveData<String> email = new MutableLiveData<>();
+    private final MutableLiveData<String> phone = new MutableLiveData<>();
     private final MutableLiveData<List<Address>> addressListLiveData = new MutableLiveData<>(new ArrayList<>());
 
     public ProfileViewModel() {
         loadUserData();
+        loadAddresses(); // ensure addresses are loaded at startup
     }
 
     public LiveData<String> getUserName() { return userName; }
+
     public LiveData<String> getEmail() { return email; }
     public LiveData<String> getPhone() { return phone; }
     public LiveData<List<Address>> getAddressListLiveData() { return addressListLiveData; }
 
-    // 🔹 Load user info from Firebase
     private void loadUserData() {
         FirebaseUser user = auth.getCurrentUser();
         if (user != null) {
             email.setValue(user.getEmail());
-
             db.collection("users").document(user.getUid())
                     .get()
                     .addOnSuccessListener(snapshot -> {
                         if (snapshot.exists()) {
                             userName.setValue(snapshot.getString("fullName"));
-                            phone.setValue(snapshot.getString("phone"));
                         }
                     })
                     .addOnFailureListener(e -> Log.e("ProfileVM", "Failed to load user", e));
         }
     }
-
-    // 🔹 Update profile data
     public void updateUser(String name, String emailAddress, String phoneNum) {
         FirebaseUser user = auth.getCurrentUser();
-        if (user != null) {
-            db.collection("users").document(user.getUid())
-                    .update("fullName", name, "phone", phoneNum, "email", emailAddress)
-                    .addOnSuccessListener(aVoid -> {
-                        userName.setValue(name);
-                        email.setValue(emailAddress);
-                        phone.setValue(phoneNum);
-                    })
-                    .addOnFailureListener(e -> Log.e("ProfileVM", "Update failed", e));
-        }
+        if (user == null) return;
+
+        db.collection("users").document(user.getUid())
+                .update("fullName", name, "email", emailAddress, "phone", phoneNum)
+                .addOnSuccessListener(aVoid -> {
+                    userName.setValue(name);
+                    email.setValue(emailAddress);
+                    phone.setValue(phoneNum);
+                })
+                .addOnFailureListener(e -> Log.e("ProfileVM", "Update user failed", e));
     }
 
-    // 🔹 Address CRUD
+    // Address CRUD
     public void addAddress(Address address) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) return;
@@ -80,7 +77,7 @@ public class ProfileViewModel extends ViewModel {
 
     public void updateAddress(Address updated) {
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null) return;
+        if (user == null || updated.getAddressId() == null) return;
 
         db.collection("users").document(user.getUid())
                 .collection("addresses")
@@ -92,7 +89,7 @@ public class ProfileViewModel extends ViewModel {
 
     public void deleteAddress(Address toDelete) {
         FirebaseUser user = auth.getCurrentUser();
-        if (user == null) return;
+        if (user == null || toDelete.getAddressId() == null) return;
 
         db.collection("users").document(user.getUid())
                 .collection("addresses")
@@ -102,7 +99,7 @@ public class ProfileViewModel extends ViewModel {
                 .addOnFailureListener(e -> Log.e("ProfileVM", "Delete address failed", e));
     }
 
-    private void loadAddresses() {
+    public void loadAddresses() {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) return;
 
@@ -121,40 +118,30 @@ public class ProfileViewModel extends ViewModel {
                 .addOnFailureListener(e -> Log.e("ProfileVM", "Load addresses failed", e));
     }
 
-    // 🔹 Logout
-    public void logout() {
-        auth.signOut();
-    }
+    // Logout
+    public void logout() { auth.signOut(); }
 
-    // 🔹 Delete account
+    // Delete account
     public void deleteAccount(DeleteAccountCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             callback.onComplete(false);
             return;
         }
-
         String uid = user.getUid();
 
-        // 1. Delete Firestore user document
         db.collection("users").document(uid).delete()
-                .addOnSuccessListener(aVoid -> {
-                    // 2. Delete Firebase Auth account
-                    user.delete()
-                            .addOnSuccessListener(aVoid2 -> callback.onComplete(true))
-                            .addOnFailureListener(e -> {
-                                Log.e("ProfileVM", "Auth delete failed", e);
-                                callback.onComplete(false);
-                            });
-                })
+                .addOnSuccessListener(aVoid -> user.delete()
+                        .addOnSuccessListener(aVoid2 -> callback.onComplete(true))
+                        .addOnFailureListener(e -> {
+                            Log.e("ProfileVM", "Auth delete failed", e);
+                            callback.onComplete(false);
+                        }))
                 .addOnFailureListener(e -> {
                     Log.e("ProfileVM", "Firestore delete failed", e);
                     callback.onComplete(false);
                 });
     }
 
-    // Callback interface
-    public interface DeleteAccountCallback {
-        void onComplete(boolean success);
-    }
+    public interface DeleteAccountCallback { void onComplete(boolean success); }
 }

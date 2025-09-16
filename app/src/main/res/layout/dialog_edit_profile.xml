@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="24dp"
+    android:background="@android:color/white">
 
     <EditText
         android:id="@+id/edtFullName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Full Name" />
+        android:hint="Full Name"
+        android:padding="12dp"
+        android:background="@drawable/edit_text_bg" />
 
     <EditText
         android:id="@+id/edtEmail"
@@ -17,7 +20,9 @@
         android:layout_height="wrap_content"
         android:hint="Email"
         android:inputType="textEmailAddress"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="16dp"
+        android:padding="12dp"
+        android:background="@drawable/edit_text_bg" />
 
     <EditText
         android:id="@+id/edtPhone"
@@ -25,13 +30,16 @@
         android:layout_height="wrap_content"
         android:hint="Phone Number"
         android:inputType="phone"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="16dp"
+        android:padding="12dp"
+        android:background="@drawable/edit_text_bg" />
 
     <Button
         android:id="@+id/btnSaveProfile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Save"
-        android:layout_marginTop="20dp"/>
-
+        android:layout_marginTop="24dp"
+        android:backgroundTint="@color/purple_500"
+        android:textColor="@android:color/white" />
 </LinearLayout>

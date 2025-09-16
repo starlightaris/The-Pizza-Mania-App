@@ -2,10 +2,12 @@ package com.nibm.pizzamaniamobileapp.view;
 
 import android.app.Dialog;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,23 +38,45 @@ public class ProfileManagementDialog extends DialogFragment {
         profileViewModel = new ViewModelProvider(requireActivity()).get(ProfileViewModel.class);
 
         // Pre-fill with existing data
-        profileViewModel.getUserName().observe(this, edtFullName::setText);
-        profileViewModel.getEmail().observe(this, edtEmail::setText);
-        profileViewModel.getPhone().observe(this, edtPhone::setText);
-
-        btnSave.setOnClickListener(v -> {
-            String name = edtFullName.getText().toString().trim();
-            String email = edtEmail.getText().toString().trim();
-            String phone = edtPhone.getText().toString().trim();
-
-            profileViewModel.updateUser(name, email, phone);
-            dismiss();
+        profileViewModel.getUserName().observe(this, name -> {
+            if (name != null) edtFullName.setText(name);
+        });
+        profileViewModel.getEmail().observe(this, email -> {
+            if (email != null) edtEmail.setText(email);
+        });
+        profileViewModel.getPhone().observe(this, phone -> {
+            if (phone != null) edtPhone.setText(phone);
         });
 
-        return new AlertDialog.Builder(requireContext())
+        btnSave.setOnClickListener(v -> saveProfile());
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setView(view)
                 .setTitle("Edit Profile")
                 .create();
+
+        // Optional: rounded corners for modern look
+        dialog.getWindow().setBackgroundDrawableResource(R.drawable.dialog_rounded_background);
+
+        return dialog;
+    }
+
+    private void saveProfile() {
+        String name = edtFullName.getText().toString().trim();
+        String email = edtEmail.getText().toString().trim();
+        String phone = edtPhone.getText().toString().trim();
+
+        if (TextUtils.isEmpty(name)) {
+            edtFullName.setError("Name is required");
+            return;
+        }
+        if (TextUtils.isEmpty(email)) {
+            edtEmail.setError("Email is required");
+            return;
+        }
+
+        profileViewModel.updateUser(name, email, phone);
+        Toast.makeText(getContext(), "Profile updated successfully!", Toast.LENGTH_SHORT).show();
+        dismiss();
     }
 }
-
